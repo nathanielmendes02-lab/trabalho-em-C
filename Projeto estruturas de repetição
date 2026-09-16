@@ -1,0 +1,129 @@
+#include <stdio.h>
+
+#define SENTINELA -9999.0f
+
+#define LIMITE_MIN -50.0f
+#define LIMITE_MAX 100.0f
+
+#define TEMP_MIN -50.0f
+#define TEMP_MAX 150.0f
+
+#define MAX_CONSECUTIVAS 3
+
+int main(void) {
+    float limite;
+    int entradaOk;
+
+    do {
+        printf("Digite o limite de temperatura para monitoramento (%.1f a %.1f): ",
+               LIMITE_MIN, LIMITE_MAX);
+        entradaOk = scanf("%f", &limite);
+
+        if (entradaOk != 1) {
+            while (getchar() != '\n') {
+                ;
+            }
+            printf("  -> Entrada invalida. Digite apenas numeros.\n");
+        } else if (limite < LIMITE_MIN || limite > LIMITE_MAX) {
+            printf("  -> Valor fora da faixa permitida (%.1f a %.1f).\n",
+                   LIMITE_MIN, LIMITE_MAX);
+        }
+
+    } while (entradaOk != 1 || limite < LIMITE_MIN || limite > LIMITE_MAX);
+
+    printf("Limite de temperatura definido: %.1f\n\n", limite);
+
+    float temperatura;
+    float soma = 0.0f;
+    float maior = 0.0f, menor = 0.0f;
+    int totalValidas = 0;
+    int totalAcimaLimite = 0;
+    int consecutivas = 0;
+    int encerramentoAutomatico = 0;
+    int primeiraLeitura = 1;
+    int continuarMonitoramento = 1;
+
+    printf("Informe as leituras de temperatura uma por vez.\n");
+    printf("Digite %.0f a qualquer momento para encerrar manualmente.\n\n", SENTINELA);
+
+    while (continuarMonitoramento) {
+
+        do {
+            printf("Temperatura: ");
+            entradaOk = scanf("%f", &temperatura);
+
+            if (entradaOk != 1) {
+                while (getchar() != '\n') {
+                    ;
+                }
+                printf("  -> Entrada invalida. Digite apenas numeros.\n");
+            } else if (temperatura != SENTINELA &&
+                       (temperatura < TEMP_MIN || temperatura > TEMP_MAX)) {
+                printf("  -> Leitura fora da faixa aceitavel (%.1f a %.1f).\n",
+                       TEMP_MIN, TEMP_MAX);
+            }
+
+        } while (entradaOk != 1 ||
+                 (temperatura != SENTINELA &&
+                  (temperatura < TEMP_MIN || temperatura > TEMP_MAX)));
+
+        if (temperatura == SENTINELA) {
+            continuarMonitoramento = 0;
+            continue;
+        }
+
+        totalValidas++;
+        soma += temperatura;
+
+        if (primeiraLeitura) {
+            maior = temperatura;
+            menor = temperatura;
+            primeiraLeitura = 0;
+        } else {
+            if (temperatura > maior) {
+                maior = temperatura;
+            }
+            if (temperatura < menor) {
+                menor = temperatura;
+            }
+        }
+
+        if (temperatura > limite) {
+            totalAcimaLimite++;
+            consecutivas++;
+            printf("  >> Acima do limite! (%d consecutiva(s))\n", consecutivas);
+
+            if (consecutivas >= MAX_CONSECUTIVAS) {
+                encerramentoAutomatico = 1;
+                continuarMonitoramento = 0;
+                printf("\n*** ALERTA: %d temperaturas consecutivas acima do limite."
+                       " Encerrando monitoramento automaticamente. ***\n",
+                       MAX_CONSECUTIVAS);
+            }
+        } else {
+            consecutivas = 0;
+        }
+    }
+
+    printf("\n===== RELATORIO FINAL =====\n");
+
+    if (totalValidas == 0) {
+        printf("Nenhuma leitura valida foi registrada.\n");
+    } else {
+        float media = soma / totalValidas;
+        float percentualAcima = ((float) totalAcimaLimite / totalValidas) * 100.0f;
+
+        printf("Limite configurado ......... %.1f\n", limite);
+        printf("Quantidade de leituras ..... %d\n", totalValidas);
+        printf("Temperatura media .......... %.2f\n", media);
+        printf("Maior temperatura .......... %.2f\n", maior);
+        printf("Menor temperatura .......... %.2f\n", menor);
+        printf("Leituras acima do limite ... %d (%.2f%%)\n", totalAcimaLimite, percentualAcima);
+        printf("Motivo do encerramento ..... %s\n",
+               encerramentoAutomatico
+                   ? "AUTOMATICO (3 leituras consecutivas acima do limite)"
+                   : "MANUAL (usuario digitou o valor sentinela)");
+    }
+
+    return 0;
+}
